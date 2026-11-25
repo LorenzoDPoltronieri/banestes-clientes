@@ -19,7 +19,23 @@ export function normalizaCpfCnpj(valor: string): string | null {
     // Se o numero de digitos for menor que 14, ele completa com os 0 a esquerda.
     if (digitos.length <= 14) return digitos.padStart(14, "0");
 
-    
     // Mais de 14 dígitos não é nem CPF nem CNPJ
     return null;
 }
+
+
+    //convertendo os textos para numero
+    // O number("") da 0, e não um erro.
+    // O .trim() tira todos os espaços do final e do começo 
+export function textoParaNumero(valor: string): number | null {
+    if (valor.trim() === "") return null;
+    const numero = Number(valor);
+    return Number.isNaN(numero) ? null : numero;    //operador ternario / condição ? a : b  
+}
+
+    //Campos opicionais como RG e Nome social 
+export function campoOpcional(valor: string | undefined): string | undefined {
+    const limpo = valor?.trim();                    //
+    return limpo ? limpo : undefined;               //operador tenario
+}
+
