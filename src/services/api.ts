@@ -1,4 +1,8 @@
 import Papa from "papaparse";
+import type { Agencia, Cliente, Conta } from "../types";
+import { normalizarCliente, normalizarConta, normalizarAgencia } from "../utils/normalizar";
+
+
 
 const BASE_URL = "https://docs.google.com/spreadsheets/d/1LkyaeCgiyaIN1IxXnbZQPmVMIcht3PIxMDUXHsvczK0/gviz/tq?tqx=out:csv&sheet="
 
@@ -26,4 +30,34 @@ export async function buscarCsv(url: string): Promise<Record<string, string>[]> 
     
     return resultado.data;
 
+}
+
+// Formato dos dados já limpos que o sistema inteiro vai usar
+
+export interface bancoDados {
+    clientes: Cliente[]
+    contas: Conta[]
+    agencias: Agencia[]
+}
+
+
+// Remove os itens null de uma lista. O "item is T" avisa o TypeScript
+// que, depois do filtro, a lista só tem itens válidos.
+function semNulos<T>(lista: (T | null)[]): T[] {
+  return lista.filter((item): item is T => item !== null);
+}
+
+// Busca as 3 abas AO MESMO TEMPO e devolve tudo normalizado.
+export async function carregarDados(): Promise<bancoDados> {
+  const [linhasClientes, linhasContas, linhasAgencias] = await Promise.all([
+    buscarCsv(URL_CLIENTES),
+    buscarCsv(URL_CONTAS),
+    buscarCsv(URL_AGENCIAS),
+  ]);
+
+    return {
+    clientes: semNulos(linhasClientes.map(normalizarCliente)),
+    contas: semNulos(linhasContas.map(normalizarConta)),
+    agencias: semNulos(linhasAgencias.map(normalizarAgencia)),
+  };
 }

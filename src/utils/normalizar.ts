@@ -1,5 +1,8 @@
 
-import type { Cliente, Conta } from "../types";
+import type { Agencia, Cliente, Conta } from "../types";
+
+// Uma linha do CSV como chega do papaparse: chave e valor, tudo texto
+export type LinhaCsv = Record<string, string>;
 
 //Limpa e deixa somente numeros
 export function apenasDigitos(valor: string): string {
@@ -9,7 +12,7 @@ export function apenasDigitos(valor: string): string {
 // Normaliza CPF/CNPJ: deixa só os dígitos e devolve os zeros à esquerda
 // que o Google Sheets remove (ele trata o CPF como número).
 // Retorna null se o valor for inválido.
-export function normalizaCpfCnpj(valor: string): string | null {
+export function normalizarCpfCnpj(valor: string): string | null {
     const digitos = apenasDigitos(valor);
 
     // Vazio ou só zeros (ex.: a conta CNT-108 tem CPF "0"): inválido
@@ -92,4 +95,105 @@ export function  paraTipoConta(valor: string): Conta["tipo"] | null {
     const procurado = simplificarTexto(valor);
     const encontrado = TIPOS_CONTA.find((opcao) => opcao === procurado);
     return encontrado ?? null
+}
+
+
+
+
+// Normalização dos clientes
+
+// Converte uma linha crua do CSV em um Cliente válido.
+// Retorna null (descarta a linha) se faltar algum dado essencial.
+export function normalizarCliente(linha: LinhaCsv): Cliente | null {
+
+  const id = campoOpcional(linha.id);
+  const cpfCnpj = normalizarCpfCnpj(linha.cpfCnpj ?? "");
+  const nome = campoOpcional(linha.nome);
+  const dataNascimento = corrigirData(linha.dataNascimento ?? "");
+  const estadoCivil = paraEstadoCivil(linha.estadoCivil ?? "");
+  const rendaAnual = textoParaNumero(linha.rendaAnual ?? "");
+  const patrimonio = textoParaNumero(linha.patrimonio ?? "");
+  const codigoAgencia = textoParaNumero(linha.codigoAgencia ?? "");
+
+  // Números são conferidos com "=== null" porque 0 é um valor válido
+  // (e o "!" consideraria 0 como falso)
+  if (
+    !id ||
+    !cpfCnpj ||
+    !nome ||
+    !dataNascimento ||
+    !estadoCivil ||
+    rendaAnual === null ||
+    patrimonio === null ||
+    codigoAgencia === null
+  ) {
+    console.warn("Cliente descartado por dados inválidos:", linha);
+    return null;
+  }
+
+  return {
+    id,
+    cpfCnpj,
+    // "ISENTO" é mantido e informa que o cliente (empresa) não possui RG
+    rg: campoOpcional(linha.rg),
+    dataNascimento,
+    nome,
+    nomeSocial: campoOpcional(linha.nomeSocial),
+    // email e endereço vazios não descartam o cliente, a tela mostra "Não informado"
+    email: campoOpcional(linha.email) ?? "",
+    endereco: campoOpcional(linha.endereco) ?? "",
+    rendaAnual,
+    patrimonio,
+    estadoCivil,
+    // Agencia inexistente é mantida: a tela de detalhes avisa o usuário
+    codigoAgencia,
+  };
+}
+
+
+//Normalização de conta, mesma logica que a Normalização de clientes
+
+// Ex.: a conta CNT-108 tem CPF "0" e é descartada.
+export function normalizarConta(linha: LinhaCsv): Conta | null {
+  const id = campoOpcional(linha.id);
+  // Mesma normalização do cliente: garante que os CPFs dos dois lados sejam os mesmos
+  const cpfCnpjCliente = normalizarCpfCnpj(linha.cpfCnpjCliente ?? "");
+  const tipo = paraTipoConta(linha.tipo ?? "");
+  const saldo = textoParaNumero(linha.saldo ?? "");
+  const limiteCredito = textoParaNumero(linha.limiteCredito ?? "");
+  const creditoDisponivel = textoParaNumero(linha.creditoDisponivel ?? "");
+
+  if (
+    !id ||
+    !cpfCnpjCliente ||
+    !tipo ||
+    saldo === null ||
+    limiteCredito === null ||
+    creditoDisponivel === null
+  ) {
+    console.warn("Conta descartada por dados inválidos:", linha);
+    return null;
+  }
+
+  return { id, cpfCnpjCliente, tipo, saldo, limiteCredito, creditoDisponivel };
+}
+
+//Normalização das agencias, mesma logica que contas e clientes.
+
+export function normalizarAgencia(linha: LinhaCsv): Agencia | null {
+  const id = campoOpcional(linha.id);
+  const codigo = textoParaNumero(linha.codigo ?? "");
+  const nome = campoOpcional(linha.nome);
+
+  if (!id || codigo === null || !nome) {
+    console.warn("Agência descartada por dados inválidos:", linha);
+    return null;
+  }
+
+  return {
+    id,
+    codigo,
+    nome,
+    endereco: campoOpcional(linha.endereco) ?? "",
+  };
 }
