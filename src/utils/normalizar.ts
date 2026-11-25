@@ -1,4 +1,6 @@
 
+import type { Cliente, Conta } from "../types";
+
 //Limpa e deixa somente numeros
 export function apenasDigitos(valor: string): string {
     return valor.replace(/\D/g, "");
@@ -39,3 +41,55 @@ export function campoOpcional(valor: string | undefined): string | undefined {
     return limpo ? limpo : undefined;               //operador tenario
 }
 
+
+    //Função utilizada para tirar os acentos e colocar tudo minusculo.
+export function simplificarTexto(valor: string): string{
+    return valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");             // Remove os acentos que anteriormente foram separados das letras
+
+}
+
+
+// Não usamos new Date porque ele interpreta como meia-noite UTC,
+// e no Brasil (UTC-3) a data vira o dia anterior.
+export function corrigirData(valor: string): Date | null {
+    const partes = valor.trim().split("-");                //O split divide o texto onde possui "-"
+    if (partes.length !== 3) return null;
+
+    const [ano, mes, dia] = partes.map(Number);
+
+    const data = new Date(ano, mes - 1, dia);
+
+    if(
+        data.getFullYear() !== ano ||
+        data.getMonth() !== mes -1 ||
+        data.getDate() !== dia
+    ){
+        return null;
+    }
+    return data;
+}
+
+
+// Valores aceitos, tirados direto da interface Cliente.
+// Se alguém escrever um valor que não existe aqui, o Codigo reclama.
+
+const ESTADOS_CIVIS: Cliente["estadoCivil"][] = ["Solteiro", "Casado", "Divorciado", "Viúvo"]
+
+// Converte o texto da planilha para um estado civil válido.
+export function paraEstadoCivil(valor: string): Cliente["estadoCivil"] | null {
+    const procurado = simplificarTexto(valor);
+    const encontrado = ESTADOS_CIVIS.find((opcao) => simplificarTexto(opcao) === procurado);
+    return encontrado ?? null;
+}
+
+const TIPOS_CONTA: Conta["tipo"][] = ["corrente", "poupanca"];
+// Converte o texto da planilha para um tipo de conta válido.
+export function  paraTipoConta(valor: string): Conta["tipo"] | null {
+    const procurado = simplificarTexto(valor);
+    const encontrado = TIPOS_CONTA.find((opcao) => opcao === procurado);
+    return encontrado ?? null
+}

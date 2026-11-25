@@ -1,19 +1,19 @@
 import { useEffect } from "react";
 import { buscarCsv, URL_CLIENTES, URL_CONTAS, URL_AGENCIAS } from "./services/api";
-import { normalizaCpfCnpj, textoParaNumero,  campoOpcional} from "./utils/normalizar";
+import { corrigirData, paraEstadoCivil, paraTipoConta } from "./utils/normalizar";
 
 function App() {
     // Teste temporário: busca as 3 abas e mostra no console do navegador
     useEffect(()=> {  
-        // Testes temporários das funções de normalização
-      console.log("CPF curto:", normalizaCpfCnpj("11122233"));         // "00011122233"
-      console.log("CPF com pontos:", normalizaCpfCnpj("111.222.333-44")); // "11122233344"
-      console.log("CPF zero:", normalizaCpfCnpj("0"));                 // null
-      console.log("Número:", textoParaNumero("85000.00"));                   // 85000
-      console.log("Número vazio:", textoParaNumero(""));                     // null
-      console.log("Número inválido:", textoParaNumero("abc"));               // null
-      console.log("RG vazio:", campoOpcional(""));                      // undefined
-      console.log("RG ok:", campoOpcional(" MG123 "));                  // "MG123"
+          // Testes temporários: data, estado civil e tipo de conta
+    console.log("Data ok:", corrigirData("1990-05-14")?.toLocaleDateString("pt-BR")); // "14/05/1990"
+    console.log("Data inexistente:", corrigirData("2020-02-31"));     // null
+    console.log("Data lixo:", corrigirData("abc"));                   // null
+    console.log("Estado civil:", paraEstadoCivil("casado"));     // "Casado"
+    console.log("Sem acento:", paraEstadoCivil("VIUVO"));        // "Viúvo"
+    console.log("Inválido:", paraEstadoCivil("Namorando"));      // null
+    console.log("Tipo conta:", paraTipoConta("Poupança"));       // "poupanca"
+    console.log("Tipo inválido:", paraTipoConta("investimento")); // null
       buscarCsv(URL_CLIENTES).then((dados)=>console.log("Clientes:", dados));
       buscarCsv(URL_CONTAS).then((dados)=>console.log("Contas:", dados));
       buscarCsv(URL_AGENCIAS).then((dados)=>console.log("Agências:", dados));
