@@ -23,7 +23,7 @@ export async function buscarCsv(url: string): Promise<Record<string, string>[]> 
         header: true,
         skipEmptyLines: true,
     });
-
+    
     return resultado.data;
 
 }
