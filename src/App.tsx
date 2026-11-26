@@ -1,33 +1,24 @@
-import { useDados } from "./context/useDados";
+import { BrowserRouter, Route, Routes} from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { ListaClientes } from "./pages/ListaClientes";
+import { DetalhesDoCliente } from "./pages/DetalhesDoCliente";
+import { NaoEncontrado } from "./pages/NaoEncontrado";
+import { NovoCliente } from "./pages/NovoCliente";
 
-function App() {
-  // Lê o "quadro de avisos"
-  const { clientes, contas, agencias, carregando, erro } = useDados();
-
-  //enquanto os dados não chegam
-  if (carregando) {
-    return <p>Carregando dados...</p>;
-  }
-
-  //se deu erro, mostra a mensagem e um botão para recarregar a página
-  if (erro) {
-    return (
-      <div role="alert">
-        <p>{erro}</p>
-        <button onClick={() => window.location.reload()}>Tentar de novo</button>
-      </div>
-    );
-  }
-
-  //deu tudo certo (teste temporário)
-  return (
-    <main>
-      <h1>Clientes Banestes</h1>
-      <p>
-        {clientes.length} clientes, {contas.length} contas e {agencias.length} agências carregados.
-      </p>
-    </main>
+// Define qual página aparece em cada endereço
+ function App() {
+  return(
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+            <Route path="/" element={<ListaClientes />} />
+            <Route path="/clientes/novo" element={<NovoCliente />} />
+            <Route path="/clientes/:id" element={<DetalhesDoCliente />} />
+            <Route path="*" element={<NaoEncontrado/>} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
-}
+ }
 
-export default App;
+ export default App;
