@@ -3,15 +3,18 @@ import { Link } from "react-router-dom";
 import { useDados } from "../context/useDados";
 import { formatarCpfCnpj, tipoPessoa, nomeExibicao } from "../utils/formatar";
 import { simplificarTexto, apenasDigitos, } from "../utils/normalizar";
+import { Paginacao } from "../components/paginacao";
 
+const ITENS_POR_PAGINA = 10;
 
 //Pagina inicial
 export function ListaClientes() {
     const{clientes, agencias} = useDados();
 
     //Oque o usuario digitou na caixa de busca.
-    const[busca, SetBusca] = useState("");
-    
+    const[busca, setBusca] = useState("");
+    // Página atual da lista (começa na 1)
+    const [pagina, setPagina] = useState(1);
 
     //Simplifica o formato do texto e dos numero para a busca
     const termoTexto = simplificarTexto(busca);
@@ -33,6 +36,13 @@ export function ListaClientes() {
 
             return nomeConfere || documentoConfere;
 });
+
+// Paginaçao: depois de filtrar, mostra so os clientes da pagina atual
+const totalPaginas = Math.max(1, Math.ceil(clientesFiltrados.length / ITENS_POR_PAGINA));
+// Garante que a página atual existe (ex.: se a busca diminuiu a lista)
+const paginaAtual = Math.min(pagina, totalPaginas);
+const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+const clientesDaPagina = clientesFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
  
 // Devolve o nome da agência pelo código, ou um aviso se ela não existir
 function nomeDaAgencia(codigo: number): string{
@@ -58,7 +68,10 @@ return(
                 id="busca"
                 type="search"
                 value={busca}
-                onChange={(e) => SetBusca(e.target.value)}
+                onChange={(e) => {
+                    setBusca(e.target.value);
+                    setPagina(1);
+                }}
                 placeholder="EX.: Ana ou 111.222.333-44"
                 />
             </div>
@@ -69,11 +82,15 @@ return(
             {clientesFiltrados.length ===0 ? (
                 <div>
                     <p>Nenhum Cliente encontrado para "{busca}".</p>
-                    <button type="button" onClick={() =>SetBusca("")}>
+                    <button type="button" onClick={() =>{
+                        setBusca("");
+                        setPagina(1);
+                        }}>
                         Limpar busca
                     </button>
                 </div>
             ) : (
+            <>
         <table>
           <caption>Lista de clientes do banco</caption>
           <thead>
@@ -86,7 +103,7 @@ return(
             </tr>
           </thead>
           <tbody>
-            {clientesFiltrados.map((cliente) => (
+            {clientesDaPagina.map((cliente) => (
               <tr key={cliente.id}>
                 <td>{nomeExibicao(cliente)}</td>
                 <td>{formatarCpfCnpj(cliente.cpfCnpj)}</td>
@@ -104,6 +121,16 @@ return(
             ))}
           </tbody>
         </table>
+
+        <Paginacao
+            paginaAtual={paginaAtual}
+            totalPaginas={totalPaginas}
+            aoMudarPagina={setPagina}
+        />
+      </>
+
+
+
       )}
     </section>
   );
